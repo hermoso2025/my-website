@@ -79,9 +79,12 @@
           <div class="right">
             <button class="secondary" id="clearBtn">비우기</button>
             <button id="copyBtn">복사</button>
+            <button class="secondary" id="aiBtn">AI 자동 생성</button>    
+            
           </div>
         </div>
 
+      
         <label>완성 프롬프트</label>
         <textarea id="out" class="out" placeholder="여기에 결과가 생성됩니다" readonly></textarea>
         <div class="hint" id="status"></div>
@@ -94,81 +97,107 @@
   </div>
 
   <script>
-    const els = {
-      t1: document.getElementById('t1'),
-      t2: document.getElementById('t2'),
-      t3: document.getElementById('t3'),
-      t4: document.getElementById('t4'),
-      t5: document.getElementById('t5'),
-      out: document.getElementById('out'),
-      lang: document.getElementById('lang'),
-      format: document.getElementById('format'),
-      status: document.getElementById('status'),
-      copyBtn: document.getElementById('copyBtn'),
-      clearBtn: document.getElementById('clearBtn'),
-    };
+  const els = {
+    t1: document.getElementById('t1'),
+    t2: document.getElementById('t2'),
+    t3: document.getElementById('t3'),
+    t4: document.getElementById('t4'),
+    t5: document.getElementById('t5'),
+    out: document.getElementById('out'),
+    lang: document.getElementById('lang'),
+    format: document.getElementById('format'),
+    status: document.getElementById('status'),
+    copyBtn: document.getElementById('copyBtn'),
+    clearBtn: document.getElementById('clearBtn'),
+    aiBtn: document.getElementById('aiBtn'),
+  };
 
-    const i18n = {
-      en: {
-        labels: ["[Technique & Subject]", "[Background & Blending]", "[Lighting & Color]", "[Details & Mood]", "[Specs]"],
-        copied: "✅ Copied to clipboard!",
-        empty: "입력하면 자동으로 생성돼요.",
-      },
-      ko: {
-        labels: ["[기법 & 주제]", "[배경 & 블렌딩 요소]", "[조명 & 색감]", "[디테일 & 분위기]", "[규격]"],
-        copied: "✅ 클립보드에 복사했어요!",
-        empty: "입력하면 자동으로 생성돼요.",
-      }
-    };
+  const i18n = {
+    en: {
+      labels: ["[Technique & Subject]", "[Background & Blending]", "[Lighting & Color]", "[Details & Mood]", "[Specs]"],
+      copied: "✅ Copied to clipboard!",
+      empty: "입력하면 자동으로 생성돼요.",
+    },
+    ko: {
+      labels: ["[기법 & 주제]", "[배경 & 블렌딩 요소]", "[조명 & 색감]", "[디테일 & 분위기]", "[규격]"],
+      copied: "✅ 클립보드에 복사했어요!",
+      empty: "입력하면 자동으로 생성돼요.",
+    }
+  };
 
-    function clean(s){ return (s||"").trim().replace(/\s+/g,' '); }
+  function clean(s){ return (s||"").trim().replace(/\s+/g,' '); }
 
-    function build(){
-      const L = i18n[els.lang.value];
-      const parts = [clean(els.t1.value), clean(els.t2.value), clean(els.t3.value), clean(els.t4.value), clean(els.t5.value)];
+  function build(){
+    const L = i18n[els.lang.value];
+    const parts = [clean(els.t1.value), clean(els.t2.value), clean(els.t3.value), clean(els.t4.value), clean(els.t5.value)];
 
-      if(parts.every(p => !p)){
-        els.out.value = "";
-        els.status.textContent = L.empty;
-        return;
-      }
-
-      if(els.format.value === "one"){
-        const line = parts.filter(Boolean).join(", ");
-        els.out.value = line;
-      } else {
-        const block = parts.map((p,i)=> p ? `${L.labels[i]}: ${p}` : `${L.labels[i]}:`).join("\n\n");
-        els.out.value = block.trim();
-      }
-      els.status.textContent = "";
+    if(parts.every(p => !p)){
+      els.out.value = "";
+      els.status.textContent = L.empty;
+      return;
     }
 
-    ["input","change"].forEach(evt=>{
-      [els.t1,els.t2,els.t3,els.t4,els.t5,els.lang,els.format].forEach(el=> el.addEventListener(evt, build));
-    });
+    if(els.format.value === "one"){
+      const line = parts.filter(Boolean).join(", ");
+      els.out.value = line;
+    } else {
+      const block = parts.map((p,i)=> p ? `${L.labels[i]}: ${p}` : `${L.labels[i]}:`).join("\n\n");
+      els.out.value = block.trim();
+    }
+    els.status.textContent = "";
+  }
 
-    els.copyBtn.addEventListener('click', async ()=>{
-      if(!els.out.value.trim()) return;
-      try{
-        await navigator.clipboard.writeText(els.out.value);
-        els.status.innerHTML = `<span class="ok">${i18n[els.lang.value].copied}</span>`;
-        setTimeout(()=> els.status.textContent="", 1400);
-      } catch(e){
-        // fallback
-        els.out.select();
-        document.execCommand('copy');
-        els.status.innerHTML = `<span class="ok">${i18n[els.lang.value].copied}</span>`;
-        setTimeout(()=> els.status.textContent="", 1400);
-      }
-    });
+  ["input","change"].forEach(evt=>{
+    [els.t1,els.t2,els.t3,els.t4,els.t5,els.lang,els.format].forEach(el=> el.addEventListener(evt, build));
+  });
 
-    els.clearBtn.addEventListener('click', ()=>{
-      [els.t1,els.t2,els.t3,els.t4].forEach(el=> el.value="");
-      els.t5.value="";
-      build();
-    });
+  els.copyBtn.addEventListener('click', async ()=>{
+    if(!els.out.value.trim()) return;
+    try{
+      await navigator.clipboard.writeText(els.out.value);
+      els.status.innerHTML = `<span class="ok">${i18n[els.lang.value].copied}</span>`;
+      setTimeout(()=> els.status.textContent="", 1400);
+    } catch(e){
+      els.out.select();
+      document.execCommand('copy');
+      els.status.innerHTML = `<span class="ok">${i18n[els.lang.value].copied}</span>`;
+      setTimeout(()=> els.status.textContent="", 1400);
+    }
+  });
 
+  els.clearBtn.addEventListener('click', ()=>{
+    [els.t1,els.t2,els.t3,els.t4].forEach(el=> el.value="");
+    els.t5.value="";
     build();
-  </script>
+  });
+
+  // ✅ AI 자동 생성 (반드시 script 안에 있어야 함)
+  els.aiBtn.addEventListener('click', async ()=>{
+    const payload = {
+      t1: els.t1.value, t2: els.t2.value, t3: els.t3.value, t4: els.t4.value, t5: els.t5.value,
+      lang: els.lang.value,
+      format: els.format.value === "one" ? "one" : "block"
+    };
+
+    els.status.textContent = "AI 생성 중...";
+    try{
+      const r = await fetch("/api/generate", {
+        method: "POST",
+        headers: { "Content-Type":"application/json" },
+        body: JSON.stringify(payload)
+      });
+      const data = await r.json();
+      if(!r.ok) throw new Error(data?.detail || data?.error || "Request failed");
+      els.out.value = (data.text || "").trim();
+      els.status.innerHTML = `<span class="ok">✅ AI로 생성 완료!</span>`;
+      setTimeout(()=> els.status.textContent="", 1400);
+    }catch(e){
+      els.status.textContent = "에러: " + e.message;
+    }
+  });
+
+  build();
+</script>
+
 </body>
 </html>
